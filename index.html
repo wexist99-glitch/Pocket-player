@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121212">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Pocket Player</title>
+<style>
+:root{--bg:#121212;--panel:#181818;--hover:#2a2a2a;--ink:#fff;--mute:#b3b3b3;--acc:#1ed760}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:linear-gradient(#2b2b2b,var(--bg) 260px) no-repeat,var(--bg);color:var(--ink);font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;min-height:100%}
+body{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 22px) 16px 230px}
+h1{font-size:1.9rem;font-weight:800;margin:0 0 4px;letter-spacing:-.02em}
+.sub{margin:0 0 18px;color:var(--mute);font-size:.9rem}
+.add{display:inline-block;background:var(--ink);color:#000;font-weight:700;font-size:.9rem;padding:10px 20px;border-radius:999px;cursor:pointer}
+.add:hover{transform:scale(1.04)}
+.add:focus-within,button:focus-visible,.search:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.search{display:block;width:100%;margin:16px 0 0;padding:12px 18px;border:0;border-radius:999px;background:var(--hover);color:var(--ink);font:inherit}
+.search::placeholder{color:var(--mute)}
+.info{color:var(--mute);font-size:.78rem;margin-top:8px;min-height:1.1em;line-height:1.4}
+.hdr{display:flex;justify-content:space-between;color:var(--mute);font-size:.8rem;padding:14px 10px 8px;border-bottom:1px solid #2a2a2a}
+ol{list-style:none;margin:0;padding:0}
+li{display:flex;align-items:center}
+li button{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:10px;border:0;border-radius:6px;background:transparent;color:var(--ink);font:inherit;cursor:pointer}
+li button:hover{background:var(--hover)}
+li .del{width:44px;flex:none;justify-content:center;color:var(--mute);font-size:1.2rem}
+li .n{width:26px;text-align:center;color:var(--mute);font-size:.85rem;flex:none}
+li .tt{flex:1;overflow-wrap:anywhere;font-size:1rem}
+li.cur .tt,li.cur .n{color:var(--acc)}
+.empty{color:var(--mute);padding:40px 10px;text-align:center;line-height:1.5;display:block}
+.bar{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--panel);border-top:1px solid #2a2a2a;border-radius:14px 14px 0 0;padding:14px 18px calc(env(safe-area-inset-bottom,0px) + 14px)}
+#title{font-weight:700;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#count{color:var(--mute);font-size:.8rem;margin-top:2px}
+.sk{display:flex;align-items:center;gap:10px;margin:12px 0 4px;color:var(--mute);font-size:.75rem;font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:2px;background:linear-gradient(90deg,#fff var(--p,0%),#4d4d4d var(--p,0%));outline-offset:6px;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#fff}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border:0;border-radius:50%;background:#fff}
+.ctl{display:flex;justify-content:center;align-items:center;gap:22px;margin-top:6px}
+.ctl button{display:grid;place-items:center;border:0;background:transparent;color:var(--mute);width:44px;height:44px;cursor:pointer;border-radius:50%;position:relative}
+.ctl button:hover{color:var(--ink)}
+.ctl button.on{color:var(--acc)}
+.ctl button.on::after{content:"";position:absolute;bottom:4px;width:4px;height:4px;border-radius:50%;background:var(--acc)}
+.ctl button.big{width:56px;height:56px;background:var(--ink);color:#000}
+.ctl button.big:hover{transform:scale(1.06);color:#000}
+.ctl svg{width:22px;height:22px;fill:currentColor}
+.ctl .big svg{width:26px;height:26px}
+.note{color:var(--mute);font-size:.75rem;line-height:1.5;padding:18px 10px 0}
+[hidden]{display:none!important}
+.tl{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tt2{min-width:0;flex:1}
+.vbtn{flex:none;border:1px solid #6a6a6a;background:transparent;color:var(--ink);border-radius:999px;padding:7px 14px;font:600 .8rem "Helvetica Neue",Helvetica,Arial,sans-serif;cursor:pointer}
+.vbtn:hover{border-color:var(--ink)}
+.vbtn:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+#vp{margin-bottom:12px}
+#v{display:block;width:100%;max-height:30vh;background:#000;border-radius:10px;object-fit:contain}
+body.vid{padding-bottom:calc(230px + 30vh)}
+.vtag{flex:none;color:var(--mute);font-size:.7rem;border:1px solid #4d4d4d;border-radius:4px;padding:1px 5px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.add:hover,.big:hover{transform:none}}
+</style>
+</head>
+<body>
+<h1>Your Library</h1>
+<p class="sub">Your own audio and video files, saved on this device. Works offline.</p>
+<label class="add">Add songs<input id="file" type="file" accept="audio/*,video/*" multiple hidden></label>
+<input id="search" class="search" type="search" placeholder="Search your songs" aria-label="Search your songs">
+<div id="status" class="info" role="status"></div>
+<div id="space" class="info"></div>
+<div class="hdr"><span>#&nbsp;&nbsp;&nbsp;Title</span><span id="total"></span></div>
+<ol id="list"></ol>
+<p class="note">Songs are stored inside this app and never uploaded. Music video files (such as .mp4) work too: tap Show video while one is playing. You can add hundreds at once; they are saved one at a time, so keep the app open until the count finishes. Songs stay until you tap × to remove them or clear this app's data in Android settings.</p>
+
+<div class="bar">
+  <div id="vp" hidden><video id="v" muted playsinline></video></div>
+  <div class="tl"><div class="tt2"><div id="title">Nothing playing</div><div id="count">Add songs to begin</div></div><button id="vbtn" class="vbtn" hidden>Show video</button></div>
+  <div class="sk"><span id="cur">0:00</span><input id="seek" type="range" min="0" max="0" step="1" value="0" aria-label="Seek"><span id="dur">0:00</span></div>
+  <div class="ctl">
+    <button id="shuf" aria-label="Shuffle"></button>
+    <button id="prev" aria-label="Previous"></button>
+    <button id="play" class="big" aria-label="Play"></button>
+    <button id="next" aria-label="Next"></button>
+    <button id="rep" aria-label="Repeat"></button>
+  </div>
+</div>
+<audio id="a" preload="auto"></audio>
+<script>
+(function(){
+var $=function(x){return document.getElementById(x)};
+var a=$('a'),F=$('file'),L=$('list'),T=$('title'),C=$('count'),S=$('seek'),P=$('play'),CU=$('cur'),DU=$('dur'),ST=$('status');
+var ic={
+ play:'<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>',
+ pause:'<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
+ next:'<svg viewBox="0 0 24 24"><path d="M6 6l9 6-9 6zM17 6h2v12h-2z"/></svg>',
+ prev:'<svg viewBox="0 0 24 24"><path d="M18 6v12l-9-6zM5 6h2v12H5z"/></svg>',
+ shuf:'<svg viewBox="0 0 24 24"><path d="M17 3l4 4-4 4V8h-2.6l-3 4 3 4H17v-3l4 4-4 4v-3h-3.4L9 12.6 6 17H3v-2h2l3-4-3-4H3V5h3.4L9 9.4 12.6 5H17z"/></svg>',
+ rep:'<svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z"/></svg>',
+ rep1:'<svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2zm-5-6h-1.5l-1 .8.6 1 .9-.5V15H12z"/></svg>'
+};
+$('shuf').innerHTML=ic.shuf;$('prev').innerHTML=ic.prev;$('next').innerHTML=ic.next;$('rep').innerHTML=ic.rep;P.innerHTML=ic.play;
+var q=[],i=-1,shuf=false,rep=0,curUrl=null,tok=0,filt='';
+var V=$('v'),VP=$('vp'),VB=$('vbtn'),hasVid=false,showVid=false,vUrl=null,curBlob=null;
+function fmt(s){if(!isFinite(s))return'0:00';s=Math.floor(s);return Math.floor(s/60)+':'+('0'+s%60).slice(-2)}
+function name(f){return f.name.replace(/\.[^.]+$/,'')}
+function esc(s){return s.replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fill(){var m=Number(S.max)||0;S.style.setProperty('--p',(m?Number(S.value)/m*100:0)+'%')}
+/* ---------- storage (IndexedDB): small "meta" list + big "files" blobs ---------- */
+var dbp=null;
+function db(){return dbp||(dbp=new Promise(function(res,rej){
+  var r=indexedDB.open('pocket-player',2);
+  r.onupgradeneeded=function(e){
+    var d=r.result,t=r.transaction;
+    if(!d.objectStoreNames.contains('meta'))d.createObjectStore('meta',{keyPath:'id',autoIncrement:true});
+    if(!d.objectStoreNames.contains('files'))d.createObjectStore('files');
+    if(e.oldVersion===1&&d.objectStoreNames.contains('songs')){
+      var m=t.objectStore('meta'),f=t.objectStore('files');
+      t.objectStore('songs').openCursor().onsuccess=function(ev){
+        var c=ev.target.result;
+        if(!c){d.deleteObjectStore('songs');return}
+        var v=c.value,rq=m.add({title:v.title,size:v.blob.size});
+        rq.onsuccess=function(){f.put(v.blob,rq.result)};
+        c.continue();
+      };
+    }
+  };
+  r.onsuccess=function(){res(r.result)};
+  r.onerror=function(){rej(r.error)};
+}))}
+function dbAdd(title,blob){var id;return db().then(function(d){return new Promise(function(res,rej){
+  var t=d.transaction(['meta','files'],'readwrite'),r=t.objectStore('meta').add({title:title,size:blob.size,video:(blob.type||'').indexOf('video/')===0});
+  r.onsuccess=function(){id=r.result;t.objectStore('files').put(blob,id)};
+  t.oncomplete=function(){res({id:id,title:title,size:blob.size,video:(blob.type||'').indexOf('video/')===0})};
+  t.onerror=t.onabort=function(){rej(t.error)};
+})})}
+function dbMeta(){return db().then(function(d){return new Promise(function(res,rej){
+  var r=d.transaction('meta').objectStore('meta').getAll();
+  r.onsuccess=function(){res(r.result)};r.onerror=function(){rej(r.error)};
+})})}
+function dbFile(id){return db().then(function(d){return new Promise(function(res,rej){
+  var r=d.transaction('files').objectStore('files').get(id);
+  r.onsuccess=function(){res(r.result)};r.onerror=function(){rej(r.error)};
+})})}
+function dbDel(id){return db().then(function(d){return new Promise(function(res,rej){
+  var t=d.transaction(['meta','files'],'readwrite');
+  t.objectStore('meta').delete(id);t.objectStore('files').delete(id);
+  t.oncomplete=function(){res()};t.onerror=t.onabort=function(){rej(t.error)};
+})})}
+function space(){
+  if(!(navigator.storage&&navigator.storage.estimate))return;
+  navigator.storage.estimate().then(function(e){
+    var g=function(b){return(b/1073741824).toFixed(1)+' GB'};
+    var txt='Using '+g(e.usage||0)+' of about '+g(e.quota||0)+' available on this device.';
+    if(navigator.storage.persisted)navigator.storage.persisted().then(function(p){$('space').textContent=txt+(p?' Protected from automatic clearing.':'')});
+    else $('space').textContent=txt;
+  }).catch(function(){});
+}
+/* ---------- list ---------- */
+function sortQ(){
+  var id=i>=0&&q[i]?q[i].id:null;
+  q.sort(function(x,y){return x.title.localeCompare(y.title,undefined,{numeric:true,sensitivity:'base'})});
+  i=id===null?-1:q.findIndex(function(t){return t.id===id});
+}
+function count(){C.textContent=q.length&&i>=0?('Track '+(i+1)+' of '+q.length):'Add songs to begin'}
+function render(){
+  var f=filt.toLowerCase(),h=[];
+  q.forEach(function(t,n){
+    if(f&&t.title.toLowerCase().indexOf(f)<0)return;
+    h.push('<li data-n="'+n+'"'+(n===i?' class="cur"':'')+'><button class="row"><span class="n">'+(n===i&&!a.paused?'▶':n+1)+'</span><span class="tt">'+esc(t.title)+'</span>'+(t.video?'<span class="vtag">video</span>':'')+'</button><button class="del" aria-label="Remove song">×</button></li>');
+  });
+  L.innerHTML=h.length?h.join(''):'<li class="empty">'+(q.length?'No songs match your search.':'Your library is empty. Tap "Add songs" to pick audio files from your device.')+'</li>';
+  $('total').textContent=q.length?q.length+(q.length===1?' song':' songs'):'';
+  count();
+}
+function mark(){
+  var o=L.querySelector('li.cur');
+  if(o){o.classList.remove('cur');o.querySelector('.n').textContent=Number(o.dataset.n)+1}
+  var c=L.querySelector('li[data-n="'+i+'"]');
+  if(c){c.classList.add('cur');c.querySelector('.n').textContent=a.paused?i+1:'▶'}
+  count();
+}
+L.onclick=function(e){
+  var li=e.target.closest('li[data-n]');if(!li)return;
+  var n=Number(li.dataset.n);
+  if(e.target.closest('.del'))del(n);else load(n,true);
+};
+$('search').oninput=function(){filt=this.value.trim();render()};
+/* ---------- playback ---------- */
+function meta(){
+  if(!('mediaSession' in navigator)||i<0)return;
+  try{navigator.mediaSession.metadata=new MediaMetadata({title:q[i].title,artist:'Pocket Player',album:'My files'})}catch(e){}
+}
+function load(n,go){
+  if(!q.length)return;
+  i=((n%q.length)+q.length)%q.length;
+  var my=++tok,t=q[i];
+  T.textContent=t.title;meta();mark();
+  dbFile(t.id).then(function(b){
+    if(my!==tok||!b)return;
+    var u=URL.createObjectURL(b);
+    a.src=u;if(curUrl)URL.revokeObjectURL(curUrl);curUrl=u;
+    curBlob=b;vClose();hasVid=(b.type||'').indexOf('video/')===0;VB.hidden=!hasVid;if(showVid)vOpen();
+    if(go){var p=a.play();if(p&&p.catch)p.catch(function(){})}
+  }).catch(function(){ST.textContent='Could not open that song.'});
+}
+function next(){
+  if(!q.length)return;
+  var n;
+  if(shuf&&q.length>1){do{n=Math.floor(Math.random()*q.length)}while(n===i)}else n=i+1;
+  if(!shuf&&n>=q.length&&rep===0){load(0,false);return}
+  load(n,true);
+}
+function prev(){
+  if(!q.length)return;
+  if(a.currentTime>3){a.currentTime=0;return}
+  load(i-1,true);
+}
+function toggle(){
+  if(!q.length)return;
+  if(i<0)load(0,true);else if(!a.src)load(i,true);else if(a.paused){var p=a.play();if(p&&p.catch)p.catch(function(){})}else a.pause();
+}
+function del(n){
+  var t=q[n];
+  if(!confirm('Remove "'+t.title+'" from this app?'))return;
+  dbDel(t.id).catch(function(){});
+  var was=n===i;q.splice(n,1);
+  if(was){
+    tok++;a.pause();a.removeAttribute('src');a.load();vClose();hasVid=false;VB.hidden=true;curBlob=null;
+    if(curUrl){URL.revokeObjectURL(curUrl);curUrl=null}
+    i=-1;T.textContent='Nothing playing';
+    if(q.length)load(Math.min(n,q.length-1),false);
+  }else if(n<i)i--;
+  render();space();
+}
+/* ---------- adding songs ---------- */
+F.onchange=function(){
+  var fs=[].slice.call(F.files||[]);F.value='';
+  if(!fs.length)return;
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+  var k=0,added=0,dup=0,failed=0,full=false;
+  (function step(){
+    if(k>=fs.length||full){finish();return}
+    var f=fs[k++],t=name(f);
+    ST.textContent='Adding '+k+' of '+fs.length+'… keep this app open.';
+    if(q.some(function(x){return x.title===t&&x.size===f.size})){dup++;step();return}
+    dbAdd(t,f).then(function(m){q.push(m);added++}).catch(function(e){
+      failed++;if(e&&e.name==='QuotaExceededError')full=true;
+    }).then(step);
+  })();
+  function finish(){
+    sortQ();
+    if(i<0&&q.length)load(0,false);
+    render();space();
+    var m='Added '+added+(added===1?' song':' songs')+'.';
+    if(dup)m+=' Skipped '+dup+' already in your library.';
+    if(full)m+=' Your device ran out of storage, so some songs were not added.';
+    else if(failed)m+=' '+failed+' could not be saved.';
+    ST.textContent=m;
+  }
+};
+/* ---------- optional music video (picture only; sound always comes from the audio player) ---------- */
+function vPlay(){if(!VP.hidden&&V.readyState>0){var p=V.play();if(p&&p.catch)p.catch(function(){})}}
+function vSync(){if(!VP.hidden&&V.readyState>0&&Math.abs(V.currentTime-a.currentTime)>0.35)V.currentTime=a.currentTime}
+function vOpen(){
+  if(!showVid||!hasVid||!curBlob)return;
+  VP.hidden=false;document.body.classList.add('vid');
+  if(!vUrl){vUrl=URL.createObjectURL(curBlob);V.src=vUrl}
+}
+function vClose(){
+  VP.hidden=true;document.body.classList.remove('vid');V.pause();
+  if(vUrl){V.removeAttribute('src');V.load();URL.revokeObjectURL(vUrl);vUrl=null}
+}
+V.onloadedmetadata=function(){V.currentTime=a.currentTime;if(!a.paused)vPlay()};
+VB.onclick=function(){showVid=!showVid;VB.textContent=showVid?'Hide video':'Show video';if(showVid)vOpen();else vClose()};
+a.onseeked=function(){vSync()};
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&!VP.hidden){V.currentTime=a.currentTime;if(!a.paused)vPlay()}});
+/* ---------- controls ---------- */
+P.onclick=toggle;$('next').onclick=next;$('prev').onclick=prev;
+$('shuf').onclick=function(){shuf=!shuf;this.classList.toggle('on',shuf)};
+$('rep').onclick=function(){rep=(rep+1)%3;this.classList.toggle('on',rep>0);this.innerHTML=rep===2?ic.rep1:ic.rep};
+a.onplay=function(){vPlay();P.innerHTML=ic.pause;P.setAttribute('aria-label','Pause');mark();if('mediaSession' in navigator)navigator.mediaSession.playbackState='playing'};
+a.onpause=function(){V.pause();P.innerHTML=ic.play;P.setAttribute('aria-label','Play');mark();if('mediaSession' in navigator)navigator.mediaSession.playbackState='paused'};
+a.onended=function(){
+  if(rep===2){a.currentTime=0;a.play();return}
+  if(!shuf&&i===q.length-1&&rep===0){a.pause();return}
+  next();
+};
+a.onloadedmetadata=function(){S.max=Math.floor(a.duration)||0;DU.textContent=fmt(a.duration);fill()};
+a.ontimeupdate=function(){vSync();
+  S.value=Math.floor(a.currentTime);CU.textContent=fmt(a.currentTime);fill();
+  if('mediaSession' in navigator&&navigator.mediaSession.setPositionState&&isFinite(a.duration)){
+    try{navigator.mediaSession.setPositionState({duration:a.duration,position:a.currentTime,playbackRate:a.playbackRate})}catch(e){}
+  }
+};
+S.oninput=function(){a.currentTime=Number(S.value);fill()};
+if('mediaSession' in navigator){
+  var ms=navigator.mediaSession;
+  [['play',function(){a.play()}],['pause',function(){a.pause()}],['nexttrack',next],['previoustrack',prev],
+   ['seekto',function(d){if(d&&typeof d.seekTime==='number')a.currentTime=d.seekTime}]
+  ].forEach(function(h){try{ms.setActionHandler(h[0],h[1])}catch(e){}});
+}
+/* ---------- start ---------- */
+render();
+dbMeta().then(function(rows){
+  q=rows;sortQ();
+  if(q.length)load(0,false);
+  render();space();
+}).catch(function(){ST.textContent='Saving is not available in this browser, so songs cannot be kept.'});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
+})();
+</script>
+</body>
+</html>
